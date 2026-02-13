@@ -5,17 +5,11 @@ import os
 import io
 import base64
 from flask import Flask, render_template, request, jsonify
-from flask_httpauth import HTTPBasicAuth
 import google.generativeai as genai
 from PIL import Image
 
 # 環境変数 GEMINI_API_KEY があればそれを使う。なければここを書き換える
 API_KEY = os.environ.get("GEMINI_API_KEY") or "AIzaSyB6OjkKmtk789gqIkDXUIPgtqc9VszvcTQ"
-
-# Basic認証（環境変数がなければ admin / pass）
-BASIC_AUTH_USER = os.environ.get("BASIC_AUTH_USER", "admin")
-BASIC_AUTH_PASSWORD = os.environ.get("BASIC_AUTH_PASSWORD", "pass")
-auth = HTTPBasicAuth()
 
 # システムプロンプト（キャラ設定）
 SYSTEM_INSTRUCTION = (
@@ -95,13 +89,6 @@ def chat_with_gemini(user_message: str, chat_session=None, image=None):
     return response.text, chat_session
 
 
-@auth.verify_password
-def verify_password(username, password):
-    if username == BASIC_AUTH_USER and password == BASIC_AUTH_PASSWORD:
-        return username
-    return None
-
-
 def decode_base64_to_image(b64_string: str) -> Image.Image:
     """Base64文字列（data URL 可）をデコードして PIL Image に変換する。"""
     if not b64_string or not b64_string.strip():
@@ -114,13 +101,11 @@ def decode_base64_to_image(b64_string: str) -> Image.Image:
 
 
 @app.route("/")
-@auth.login_required
-def home():
+def index():
     return render_template("index.html")
 
 
 @app.route("/chat", methods=["POST"])
-@auth.login_required
 def chat():
     if not API_KEY or API_KEY == "YOUR_API_KEY_HERE":
         return jsonify({
